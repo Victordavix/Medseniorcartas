@@ -1,0 +1,22 @@
+# ambiente / temporários
+__pycache__/
+*.pyc
+.claude/
+~$*.xlsx
+
+# dados do portal (banco, planilhas enviadas, PDFs) - nunca versionar
+webapp/dados/
+
+# saídas geradas e planilhas de clientes (contêm dados pessoais)
+saida/
+entrada/
+TESTE FINAL/
+*.xlsx
+!testes/TESTE_ROBUSTEZ.xlsx
+
+# imagens de exemplo preenchidas (contêm dados de beneficiário) e cópias soltas dos moldes
+CARTA_COBRANÇA*.jpg
+PÁGINA_1.jpg
+PÁGINA_2.png
+modelos/PÁGINA_1.jpg
+modelos/PÁGINA_2.png

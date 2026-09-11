@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block titulo %}Usuários{% endblock %}
+{% block conteudo %}
+<h1 class="titulo-pagina">Usuários</h1>
+
+<div class="duas-colunas">
+  <section class="secao">
+    <h2 class="titulo-secao">Cadastrados <span class="contagem">{{ usuarios|length }}</span></h2>
+    <div class="tabela-rolagem">
+    <table class="tabela">
+      <thead><tr><th>Nome</th><th>Login</th><th>Perfil</th><th>Último acesso</th><th>Situação</th><th></th></tr></thead>
+      <tbody>
+        {% for u in usuarios %}
+        <tr class="{{ 'inativo' if not u.ativo }}">
+          <td>{{ u.nome }}</td>
+          <td class="mono">{{ u.login }}</td>
+          <td>{{ 'Super admin' if u.papel == 'superadmin' else 'Operador' }}</td>
+          <td class="mono">{{ u.ultimo_acesso|dt or '—' }}</td>
+          <td>{% if u.ativo %}<span class="selo selo-ok"><i></i>Ativo</span>{% else %}<span class="selo selo-neutro"><i></i>Desativado</span>{% endif %}</td>
+          <td class="acoes">
+            <details class="menu-linha">
+              <summary class="btn btn-sm btn-ghost">Ações</summary>
+              <div class="menu-conteudo">
+                <form method="post" action="{{ url_for('usuario_senha', uid=u.id) }}" class="form-inline">
+                  <input type="password" name="senha" placeholder="Nova senha" minlength="6" required aria-label="Nova senha para {{ u.login }}">
+                  <button type="submit" class="btn btn-sm btn-contorno">Redefinir senha</button>
+                </form>
+                {% if u.id != g.usuario.id %}
+                <form method="post" action="{{ url_for('usuario_alternar', uid=u.id) }}">
+                  <button type="submit" class="btn btn-sm {{ 'btn-perigo-contorno' if u.ativo else 'btn-contorno' }}">{{ 'Desativar' if u.ativo else 'Reativar' }}</button>
+                </form>
+                {% endif %}
+              </div>
+            </details>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="secao">
+    <h2 class="titulo-secao">Novo usuário</h2>
+    <form method="post" action="{{ url_for('usuario_novo') }}" class="form">
+      <label class="campo"><span>Nome completo</span><input type="text" name="nome" required></label>
+      <label class="campo"><span>Login</span><input type="text" name="login" required pattern="[a-z0-9._-]{3,40}" autocapitalize="none" spellcheck="false"><small>letras minúsculas, números, ponto, hífen</small></label>
+      <label class="campo"><span>Senha inicial</span><input type="password" name="senha" required minlength="6"></label>
+      <label class="campo"><span>Perfil</span>
+        <select name="papel">
+          <option value="operador">Operador (envia planilhas e baixa PDFs)</option>
+          <option value="superadmin">Super admin (também gerencia usuários e exclui OS)</option>
+        </select>
+      </label>
+      <button type="submit" class="btn btn-primario">Criar usuário</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block classe_main %}centro{% endblock %}
+{% block conteudo %}
+<div class="cartao cartao-login">
+  <h1 class="titulo-pagina">{{ titulo }}</h1>
+  <p class="texto-apoio">{{ mensagem }}</p>
+  <a class="btn btn-contorno" href="{{ url_for('painel') if g.usuario else url_for('login') }}">Voltar</a>
+</div>
+{% endblock %}

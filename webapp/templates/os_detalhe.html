@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block titulo %}{{ ordem.numero }}{% endblock %}
+{% block conteudo %}
+{% set rest = restante(ordem) %}
+
+<div class="cabecalho-os">
+  <div>
+    <a class="voltar" href="{{ url_for('painel') }}">{{ icone('seta-esq') }} Ordens de serviço</a>
+    <h1 class="titulo-pagina mono">{{ ordem.numero }}</h1>
+    <dl class="meta">
+      <div><dt>Solicitante</dt><dd>{{ ordem.solicitante_nome }} <span class="suave">({{ ordem.solicitante_login }})</span></dd></div>
+      <div><dt>Solicitado em</dt><dd class="mono">{{ ordem.criado_em|dt }}</dd></div>
+      <div><dt>Planilha</dt><dd><a href="{{ url_for('baixar_original', os_id=ordem.id) }}" title="Baixar a planilha original">{{ ordem.arquivo_original }}</a></dd></div>
+      {% if origem %}<div><dt>Gerada de novo a partir da</dt><dd class="mono">{{ origem }}</dd></div>{% endif %}
+      {% if ordem.status == 'concluida' %}
+      <div><dt>Concluída em</dt><dd class="mono">{{ ordem.concluido_em|dt }}</dd></div>
+      <div><dt>PDFs disponíveis</dt><dd class="mono">{% if rest == 'expirado' %}<span class="selo selo-neutro">expirados em {{ ordem.expira_em|dt }}</span>{% else %}por mais {{ rest }} <span class="suave">(até {{ ordem.expira_em|dt }})</span>{% endif %}</dd></div>
+      {% endif %}
+    </dl>
+  </div>
+  <div class="cabecalho-acoes">
+    {% if disponivel %}
+      <a class="btn btn-primario btn-grande" href="{{ url_for('baixar_tudo', os_id=ordem.id) }}">{{ icone('download') }} BAIXAR TUDO</a>
+      {% if tem_lote %}<a class="btn btn-contorno" href="{{ url_for('baixar_lote', os_id=ordem.id) }}" title="Um único PDF com todas as cartas em sequência, para a impressora">Lote para impressão (PDF)</a>{% endif %}
+    {% elif ordem.status != 'processando' %}
+      <form method="post" action="{{ url_for('reprocessar', os_id=ordem.id) }}">
+        <button type="submit" class="btn btn-primario">{{ icone('refazer') }} Gerar novamente</button>
+      </form>
+    {% endif %}
+    {% if g.usuario.papel == 'superadmin' and ordem.status != 'processando' %}
+      <form method="post" action="{{ url_for('excluir_os', os_id=ordem.id) }}" data-confirmar="Excluir a {{ ordem.numero }} permanentemente? A planilha original, os PDFs e o registro serão apagados.">
+        <button type="submit" class="btn btn-perigo-contorno btn-sm">{{ icone('lixeira') }} Excluir OS</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+{% if ordem.status == 'processando' %}
+<section class="painel-status" id="painel-status" data-status-url="{{ url_for('os_status', os_id=ordem.id) }}">
+  <div class="spinner" aria-hidden="true"></div>
+  <div>
+    <b>Gerando as cartas…</b>
+    <p class="texto-apoio">Lendo a planilha e montando um PDF por beneficiário. A página atualiza sozinha ao terminar.</p>
+  </div>
+</section>
+
+{% elif ordem.status == 'erro' %}
+<section class="aviso aviso-erro aviso-bloco">
+  <b>A geração falhou.</b>
+  <pre class="erro-detalhe">{{ ordem.erro }}</pre>
+  <p class="texto-apoio">Corrija a planilha e envie de novo, ou use “Gerar novamente” se o problema foi temporário.</p>
+</section>
+
+{% else %}
+<form method="post" action="{{ url_for('baixar_selecionados', os_id=ordem.id) }}" id="form-cartas">
+<section class="secao">
+  <div class="barra-ferramentas">
+    <div class="busca busca-local">
+      <span class="busca-icone">{{ icone('busca') }}</span>
+      <input type="search" id="filtro" placeholder="Filtrar por nome, matrícula, CPF ou cidade" aria-label="Filtrar beneficiários" autocomplete="off">
+    </div>
+    <div class="resumo mono">
+      <span id="contagem-visivel">{{ cartas|length }}</span> de {{ cartas|length }} beneficiários
+      <span class="sep">·</span> {{ ordem.qtd_linhas }} boletos
+      <span class="sep">·</span> total {{ total|moeda }}
+    </div>
+    {% if disponivel %}
+    <button type="submit" class="btn btn-contorno" id="btn-baixar-sel" disabled>{{ icone('download') }} Baixar selecionados (<span id="qtd-sel">0</span>)</button>
+    {% endif %}
+  </div>
+
+  {% if not disponivel %}
+  <div class="aviso aviso-neutro aviso-bloco">
+    Os PDFs desta OS expiraram ({{ ordem.expira_em|dt }}) e foram removidos. A lista abaixo é o registro do que foi gerado.
+    Para baixar de novo, use “Gerar novamente”: uma nova OS será aberta a partir da mesma planilha.
+  </div>
+  {% endif %}
+
+  <div class="tabela-rolagem">
+  <table class="tabela tabela-cartas" id="tabela-cartas">
+    <thead>
+      <tr>
+        {% if disponivel %}<th class="col-check"><input type="checkbox" id="marcar-todos" aria-label="Marcar todos os visíveis" title="Marcar todos os visíveis"></th>{% endif %}
+        <th class="num">Nº</th>
+        <th>Matrícula</th>
+        <th>Beneficiário</th>
+        <th>CPF</th>
+        <th>Cidade / UF</th>
+        <th class="num">Boletos</th>
+        <th class="num">Valor total</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in cartas %}
+      <tr data-busca="{{ (c.nome ~ ' ' ~ c.matricula ~ ' ' ~ c.cpf ~ ' ' ~ (c.cidade or '') ~ ' ' ~ (c.uf or ''))|lower }}">
+        {% if disponivel %}<td class="col-check"><input type="checkbox" name="carta" value="{{ c.id }}" class="chk" aria-label="Selecionar {{ c.nome }}"></td>{% endif %}
+        <td class="num mono">{{ '%04d'|format(c.seq) }}</td>
+        <td class="mono">{{ c.matricula }}</td>
+        <td class="nome">{{ c.nome }}</td>
+        <td class="mono">{{ c.cpf|cpf }}</td>
+        <td>{{ c.cidade }}{% if c.uf %} / {{ c.uf }}{% endif %}</td>
+        <td class="num mono">{{ c.qtd_boletos }}</td>
+        <td class="num mono">{{ c.total|moeda }}</td>
+        <td class="acoes">
+          {% if disponivel %}<a class="btn btn-sm btn-contorno" href="{{ url_for('baixar_carta', os_id=ordem.id, carta_id=c.id) }}">{{ icone('download') }} PDF</a>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <div class="vazio" id="vazio-filtro" hidden><p>Nenhum beneficiário corresponde ao filtro.</p></div>
+</section>
+</form>
+{% endif %}
+{% endblock %}

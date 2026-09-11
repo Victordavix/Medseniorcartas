@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}Cartas de Cobrança{% endblock %} · MedSênior</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+<script>
+  // aplica o tema antes de pintar, para não piscar
+  try { var t = localStorage.getItem('tema'); if (t) document.documentElement.dataset.tema = t; } catch (e) {}
+</script>
+</head>
+<body>
+{% if g.usuario %}
+<header class="topo">
+  <a class="marca" href="{{ url_for('painel') }}">
+    <span class="marca-logo">Med<b>Sênior</b></span>
+    <span class="marca-sub">Cartas de Cobrança</span>
+  </a>
+  <nav class="nav">
+    <a href="{{ url_for('painel') }}" class="{{ 'ativo' if request.endpoint in ('painel','os_detalhe') }}">Ordens de serviço</a>
+    {% if g.usuario.papel == 'superadmin' %}
+    <a href="{{ url_for('usuarios') }}" class="{{ 'ativo' if request.endpoint and request.endpoint.startswith('usuario') }}">Usuários</a>
+    <a href="{{ url_for('auditoria') }}" class="{{ 'ativo' if request.endpoint == 'auditoria' }}">Auditoria</a>
+    {% endif %}
+  </nav>
+  <div class="topo-dir">
+    <button type="button" class="btn btn-ghost btn-icone" id="alternar-tema" aria-label="Alternar tema claro/escuro" title="Tema claro/escuro">
+      {{ icone('sol') }}
+    </button>
+    <div class="usuario-chip" title="{{ g.usuario.login }}">
+      <span class="usuario-nome">{{ g.usuario.nome }}</span>
+      <span class="usuario-papel">{{ 'super admin' if g.usuario.papel == 'superadmin' else 'operador' }}</span>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('minha_senha') }}">Senha</a>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('sair') }}">Sair</a>
+  </div>
+</header>
+{% endif %}
+
+<main class="conteudo {% block classe_main %}{% endblock %}">
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}
+    <div class="avisos">
+      {% for cat, m in msgs %}<div class="aviso aviso-{{ cat }}" role="status">{{ m }}</div>{% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+  {% block conteudo %}{% endblock %}
+</main>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

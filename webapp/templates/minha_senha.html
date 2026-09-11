@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block titulo %}Alterar senha{% endblock %}
+{% block classe_main %}centro{% endblock %}
+{% block conteudo %}
+<div class="cartao cartao-login">
+  <h1 class="titulo-pagina">Alterar minha senha</h1>
+  {% if erro %}<div class="aviso aviso-erro" role="alert">{{ erro }}</div>{% endif %}
+  <form method="post" class="form">
+    <label class="campo"><span>Senha atual</span><input type="password" name="atual" required autofocus></label>
+    <label class="campo"><span>Nova senha</span><input type="password" name="nova" required minlength="6"><small>mínimo 6 caracteres</small></label>
+    <label class="campo"><span>Confirmar nova senha</span><input type="password" name="confirmar" required minlength="6"></label>
+    <div class="linha-botoes">
+      <a class="btn btn-ghost" href="{{ url_for('painel') }}">Cancelar</a>
+      <button type="submit" class="btn btn-primario">Salvar</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

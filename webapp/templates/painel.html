@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block titulo %}Ordens de serviço{% endblock %}
+{% block conteudo %}
+
+<section class="bloco-envio">
+  <div class="bloco-envio-texto">
+    <h1 class="titulo-pagina">Gerar cartas de cobrança</h1>
+    <p class="texto-apoio">Envie a planilha da MedSênior (.xlsx). Cada envio abre uma ordem de serviço com seu nome, data e hora.
+      Os PDFs ficam disponíveis por {{ horas }} horas; a planilha original fica guardada.</p>
+  </div>
+  <form method="post" action="{{ url_for('os_nova') }}" enctype="multipart/form-data" class="form-envio" id="form-envio">
+    <label class="zona-arquivo" id="zona-arquivo">
+      <input type="file" name="planilha" id="planilha" accept=".xlsx,.xlsm" required>
+      <span class="zona-icone">{{ icone('upload') }}</span>
+      <span class="zona-texto"><b>Escolher planilha</b> ou arrastar aqui<br><small>.xlsx até {{ tam_max }} MB</small></span>
+      <span class="zona-nome" id="zona-nome" hidden></span>
+    </label>
+    <button type="submit" class="btn btn-primario" id="btn-gerar" disabled>{{ icone('play') }} Gerar PDFs</button>
+  </form>
+</section>
+
+<section class="secao">
+  <div class="secao-cabecalho">
+    <h2 class="titulo-secao">Ordens de serviço <span class="contagem">{{ ordens|length }} de {{ total_os }}</span></h2>
+    <form method="get" class="busca">
+      <span class="busca-icone">{{ icone('busca') }}</span>
+      <input type="search" name="q" value="{{ busca }}" placeholder="Nº da OS, planilha ou solicitante" aria-label="Buscar ordens de serviço">
+      {% if busca %}<a class="btn btn-ghost btn-sm" href="{{ url_for('painel') }}">Limpar</a>{% endif %}
+    </form>
+  </div>
+
+  {% if ordens %}
+  <div class="tabela-rolagem">
+  <table class="tabela">
+    <thead>
+      <tr>
+        <th>OS</th>
+        <th>Planilha</th>
+        <th>Solicitante</th>
+        <th>Data e hora</th>
+        <th class="num">Cartas</th>
+        <th>Situação</th>
+        <th>PDFs disponíveis</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for o in ordens %}
+      {% set rest = restante(o) %}
+      <tr>
+        <td class="mono"><a href="{{ url_for('os_detalhe', os_id=o.id) }}">{{ o.numero }}</a></td>
+        <td class="truncar" title="{{ o.arquivo_original }}">{{ o.arquivo_original }}</td>
+        <td>{{ o.solicitante_nome }} <span class="suave">({{ o.solicitante_login }})</span></td>
+        <td class="mono">{{ o.criado_em|dt }}</td>
+        <td class="num mono">{{ o.qtd_cartas if o.status == 'concluida' else '' }}</td>
+        <td>
+          {% if o.status == 'processando' %}<span class="selo selo-processando"><i></i>Gerando</span>
+          {% elif o.status == 'erro' %}<span class="selo selo-erro"><i></i>Erro</span>
+          {% else %}<span class="selo selo-ok"><i></i>Concluída</span>{% endif %}
+        </td>
+        <td class="mono">
+          {% if o.status == 'concluida' %}
+            {% if rest == 'expirado' %}<span class="suave">expirados</span>{% else %}{{ rest }}{% endif %}
+          {% endif %}
+        </td>
+        <td class="acoes"><a class="btn btn-sm btn-contorno" href="{{ url_for('os_detalhe', os_id=o.id) }}">Abrir</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <div class="vazio">
+    {% if busca %}
+      <p>Nenhuma ordem de serviço encontrada para “{{ busca }}”.</p>
+      <a class="btn btn-contorno btn-sm" href="{{ url_for('painel') }}">Ver todas</a>
+    {% else %}
+      <p>Nenhuma ordem de serviço ainda. Envie a primeira planilha acima para gerar as cartas.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block titulo %}Auditoria{% endblock %}
+{% block conteudo %}
+<h1 class="titulo-pagina">Auditoria</h1>
+<p class="texto-apoio">Últimos 500 eventos. Este registro não pode ser apagado pelos usuários.</p>
+<section class="secao">
+  <div class="tabela-rolagem">
+  <table class="tabela">
+    <thead><tr><th>Quando</th><th>Usuário</th><th>Ação</th><th>OS</th><th>Detalhe</th></tr></thead>
+    <tbody>
+      {% for e in eventos %}
+      <tr>
+        <td class="mono">{{ e.quando|dt }}</td>
+        <td class="mono">{{ e.usuario_login or '—' }}</td>
+        <td><span class="selo selo-neutro">{{ e.acao.replace('_', ' ') }}</span></td>
+        <td class="mono">{% if e.os_numero %}<a href="{{ url_for('os_detalhe', os_id=e.os_id) }}">{{ e.os_numero }}</a>{% elif e.os_id %}OS #{{ e.os_id }} (excluída){% endif %}</td>
+        <td class="truncar" title="{{ e.detalhe or '' }}">{{ e.detalhe or '' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="suave">Nenhum evento registrado.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endblock %}
