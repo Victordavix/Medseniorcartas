@@ -49,6 +49,16 @@ banco está isolada em `webapp/db.py`.
 
 6. **Primeiro acesso.** Entre com o super admin, troque a senha e cadastre os operadores.
 
+## Esqueci a senha do super admin
+
+1. No Railway: serviço **web** → **Variables** → adicione `ADMIN_RESET_SENHA` com a nova senha.
+2. O Railway faz um novo deploy sozinho. Na inicialização, a senha do login `ADMIN_LOGIN`
+   (padrão `admin`) é redefinida, o usuário é reativado e a auditoria registra o evento.
+3. Entre no portal com a nova senha e **remova a variável** `ADMIN_RESET_SENHA` (senão a senha
+   volta a ser redefinida a cada deploy).
+
+As senhas dos demais usuários são redefinidas pelo super admin em **Usuários → Ações**.
+
 ## Limites a observar
 
 - Upload de planilha limitado a 30 MB (ajustável em `TAM_MAX_UPLOAD_MB` no `app.py`).

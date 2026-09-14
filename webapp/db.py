@@ -95,6 +95,24 @@ def inicializar(admin_login="admin", admin_senha="admin"):
         )
         con.commit()
         print(f"[portal] Super admin inicial criado: login '{admin_login}' / senha '{admin_senha}'. Troque a senha no primeiro acesso.")
+
+    # Recuperação de acesso: se ADMIN_RESET_SENHA estiver definida, redefine a senha do login ADMIN_LOGIN
+    # (e reativa o usuário / garante perfil superadmin). Remova a variável depois de entrar.
+    nova = os.environ.get("ADMIN_RESET_SENHA")
+    if nova:
+        u = con.execute("SELECT id FROM usuarios WHERE lower(login) = ?", (admin_login.lower(),)).fetchone()
+        if u:
+            con.execute("UPDATE usuarios SET senha_hash = ?, ativo = 1, papel = 'superadmin' WHERE id = ?",
+                        (generate_password_hash(nova), u["id"]))
+        else:
+            con.execute(
+                "INSERT INTO usuarios (nome, login, senha_hash, papel, ativo, criado_em) VALUES (?, ?, ?, 'superadmin', 1, ?)",
+                ("Super Admin", admin_login, generate_password_hash(nova), agora()),
+            )
+        con.execute("INSERT INTO eventos (quando, usuario_id, usuario_login, acao, os_id, detalhe) VALUES (?, NULL, ?, 'senha_redefinida_por_variavel', NULL, ?)",
+                    (agora(), admin_login, "ADMIN_RESET_SENHA aplicada na inicialização"))
+        con.commit()
+        print(f"[portal] Senha do super admin '{admin_login}' redefinida via ADMIN_RESET_SENHA. Remova a variável após entrar.")
     con.close()
 
 
